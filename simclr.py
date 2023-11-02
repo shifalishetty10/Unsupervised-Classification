@@ -18,6 +18,9 @@ from utils.memory import MemoryBank
 from utils.train_utils import simclr_train
 from utils.utils import fill_memory_bank
 from termcolor import colored
+from sklearn import svm
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 # Parser
 parser = argparse.ArgumentParser(description='SimCLR')
@@ -147,6 +150,29 @@ def main():
     indices, acc = memory_bank_val.mine_nearest_neighbors(topk)
     print('Accuracy of top-%d nearest neighbors on val set is %.2f' %(topk, 100*acc))
     np.save(p['topk_neighbors_val_path'], indices)   
+
+
+
+    # Load the features and labels
+    features = memory_bank_base.features  # Extracted features
+    labels = memory_bank_base.labels  # Corresponding labels
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(features, labels, test_size=0.2, random_state=42)
+
+    # Create an SVM classifier
+    svm_classifier = svm.SVC(kernel='linear', C=1.0)
+
+    # Train the SVM
+    svm_classifier.fit(X_train, y_train)
+
+    # Predict on the test set
+    y_pred = svm_classifier.predict(X_test)
+
+    # Evaluate the SVM
+    accuracy = accuracy_score(y_test, y_pred)
+    print("SVM Accuracy: {:.2f}%".format(accuracy * 100))
+
 
  
 if __name__ == '__main__':
